@@ -5,7 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let documents = [];
   let initialSteps = [];      // Run once at the start
   let perUploadSteps = [];    // Run before each file upload
-  let currentStepType = null; // Track which step type we're adding
+  let currentStepType = null; // Track which step type we're adding/editing
+  let editingStepIndex = null; // Track which step is being edited (null = adding new)
   let isRunning = false;
 
   // DOM Elements
@@ -222,22 +223,49 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Custom Steps
-  function showStepModal(stepType) {
+  function showStepModal(stepType, editIndex = null) {
     currentStepType = stepType;
-    // Update modal title based on step type
+    editingStepIndex = editIndex;
+    
+    const isEditing = editIndex !== null;
+    const steps = stepType === 'initial' ? initialSteps : perUploadSteps;
+    const stepToEdit = isEditing ? steps[editIndex] : null;
+    
+    // Update modal title based on step type and mode
     if (elements.stepModalTitle) {
-      elements.stepModalTitle.textContent = stepType === 'initial' 
-        ? 'Add Initial Step (Run Once)' 
-        : 'Add Per-Upload Step (Run for Each File)';
+      if (isEditing) {
+        elements.stepModalTitle.textContent = stepType === 'initial' 
+          ? 'Edit Initial Step' 
+          : 'Edit Per-Upload Step';
+      } else {
+        elements.stepModalTitle.textContent = stepType === 'initial' 
+          ? 'Add Initial Step (Run Once)' 
+          : 'Add Per-Upload Step (Run for Each File)';
+      }
     }
-    // Reset form
-    elements.stepAction.value = 'click';
-    elements.stepSelector.value = '';
-    elements.stepValue.value = '';
-    elements.stepDuration.value = '1000';
-    elements.stepUrl.value = '';
-    elements.stepKey.value = '';
-    elements.stepDescription.value = '';
+    
+    // Update save button text
+    elements.saveStepBtn.textContent = isEditing ? 'Save Changes' : 'Add Step';
+    
+    // Reset or populate form
+    if (isEditing && stepToEdit) {
+      elements.stepAction.value = stepToEdit.action || 'click';
+      elements.stepSelector.value = stepToEdit.selector || '';
+      elements.stepValue.value = stepToEdit.value || '';
+      elements.stepDuration.value = stepToEdit.duration || '1000';
+      elements.stepUrl.value = stepToEdit.url || '';
+      elements.stepKey.value = stepToEdit.key || '';
+      elements.stepDescription.value = stepToEdit.description || '';
+    } else {
+      elements.stepAction.value = 'click';
+      elements.stepSelector.value = '';
+      elements.stepValue.value = '';
+      elements.stepDuration.value = '1000';
+      elements.stepUrl.value = '';
+      elements.stepKey.value = '';
+      elements.stepDescription.value = '';
+    }
+    
     updateStepModalFields();
     elements.stepModal.classList.remove('hidden');
   }
@@ -320,14 +348,28 @@ document.addEventListener('DOMContentLoaded', () => {
         break;
     }
     
-    // Add to the appropriate step list based on type
-    if (currentStepType === 'initial') {
-      initialSteps.push(step);
-      renderSteps('initial');
+    // Add or update the step based on whether we're editing
+    if (editingStepIndex !== null) {
+      // Editing existing step
+      if (currentStepType === 'initial') {
+        initialSteps[editingStepIndex] = step;
+        renderSteps('initial');
+      } else {
+        perUploadSteps[editingStepIndex] = step;
+        renderSteps('perUpload');
+      }
     } else {
-      perUploadSteps.push(step);
-      renderSteps('perUpload');
+      // Adding new step
+      if (currentStepType === 'initial') {
+        initialSteps.push(step);
+        renderSteps('initial');
+      } else {
+        perUploadSteps.push(step);
+        renderSteps('perUpload');
+      }
     }
+    
+    editingStepIndex = null; // Reset editing state
     hideModal(elements.stepModal);
   }
 
@@ -356,19 +398,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     container.innerHTML = steps.map((step, index) => `
-      <div class="step-item">
+      <div class="step-item" data-index="${index}" data-type="${stepType}">
         <span class="step-number">${index + 1}</span>
-        <div class="step-details">
+        <div class="step-details step-clickable" data-index="${index}" data-type="${stepType}">
           <span class="step-action">${step.action}</span>
           <span class="step-description">${step.description}</span>
+          <span class="step-edit-hint">✎ click to edit</span>
         </div>
         <button class="step-remove" data-index="${index}" data-type="${stepType}">&times;</button>
       </div>
     `).join('');
     
+    // Add click to edit listeners
+    container.querySelectorAll('.step-clickable').forEach(el => {
+      el.addEventListener('click', (e) => {
+        const index = parseInt(e.currentTarget.dataset.index);
+        const type = e.currentTarget.dataset.type;
+        showStepModal(type, index);
+      });
+    });
+    
     // Add remove button listeners
     container.querySelectorAll('.step-remove').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent triggering edit
         const index = parseInt(e.target.dataset.index);
         const type = e.target.dataset.type;
         if (type === 'initial') {

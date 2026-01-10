@@ -367,6 +367,14 @@ input[type="checkbox"] {
 
 .step-details {
   flex: 1;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.step-details.step-clickable:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .step-action {
@@ -377,6 +385,18 @@ input[type="checkbox"] {
 .step-description {
   font-size: 0.9rem;
   color: var(--text-secondary);
+}
+
+.step-edit-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  opacity: 0;
+  margin-left: 10px;
+  transition: opacity 0.2s;
+}
+
+.step-details.step-clickable:hover .step-edit-hint {
+  opacity: 1;
 }
 
 .step-remove {
