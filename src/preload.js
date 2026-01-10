@@ -7,6 +7,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   scanFolder: (folderPath) => ipcRenderer.invoke('scan-folder', folderPath),
   previewFile: (filePath) => ipcRenderer.invoke('preview-file', filePath),
   
+  // Configuration save/load
+  saveConfig: (config) => ipcRenderer.invoke('save-config', config),
+  loadConfig: () => ipcRenderer.invoke('load-config'),
+  
   // Automation operations
   startAutomation: (config) => ipcRenderer.invoke('start-automation', config),
   stopAutomation: () => ipcRenderer.invoke('stop-automation'),

@@ -138,3 +138,53 @@ ipcMain.handle('preview-file', async (event, filePath) => {
     return { success: false, error: error.message };
   }
 });
+
+// Save configuration to file
+ipcMain.handle('save-config', async (event, config) => {
+  try {
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: 'Save Configuration',
+      defaultPath: 'ui-tester-config.json',
+      filters: [
+        { name: 'JSON Files', extensions: ['json'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    });
+    
+    if (result.canceled) {
+      return { success: false, canceled: true };
+    }
+    
+    const configData = JSON.stringify(config, null, 2);
+    fs.writeFileSync(result.filePath, configData, 'utf-8');
+    
+    return { success: true, filePath: result.filePath };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Load configuration from file
+ipcMain.handle('load-config', async () => {
+  try {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Load Configuration',
+      filters: [
+        { name: 'JSON Files', extensions: ['json'] },
+        { name: 'All Files', extensions: ['*'] }
+      ],
+      properties: ['openFile']
+    });
+    
+    if (result.canceled) {
+      return { success: false, canceled: true };
+    }
+    
+    const content = fs.readFileSync(result.filePaths[0], 'utf-8');
+    const config = JSON.parse(content);
+    
+    return { success: true, config, filePath: result.filePaths[0] };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});

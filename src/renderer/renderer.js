@@ -69,7 +69,11 @@ document.addEventListener('DOMContentLoaded', () => {
     previewModal: document.getElementById('previewModal'),
     previewTitle: document.getElementById('previewTitle'),
     previewContent: document.getElementById('previewContent'),
-    closePreviewBtn: document.getElementById('closePreviewBtn')
+    closePreviewBtn: document.getElementById('closePreviewBtn'),
+    
+    // Save/Load Config
+    saveConfigBtn: document.getElementById('saveConfigBtn'),
+    loadConfigBtn: document.getElementById('loadConfigBtn')
   };
 
   // Initialize event listeners
@@ -105,6 +109,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Preview Modal
     elements.closePreviewBtn.addEventListener('click', () => hideModal(elements.previewModal));
+    
+    // Save/Load Config
+    elements.saveConfigBtn.addEventListener('click', handleSaveConfig);
+    elements.loadConfigBtn.addEventListener('click', handleLoadConfig);
     
     // Close modals on background click
     elements.stepModal.addEventListener('click', (e) => {
@@ -604,7 +612,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.logsContainer.innerHTML = '';
   }
 
-  // Save/Load Config
+  // Save/Load Config to localStorage (auto-save)
   function saveConfig() {
     const config = {
       targetUrl: elements.targetUrl.value,
@@ -624,19 +632,80 @@ document.addEventListener('DOMContentLoaded', () => {
     if (saved) {
       try {
         const config = JSON.parse(saved);
-        elements.targetUrl.value = config.targetUrl || '';
-        elements.uploadSelector.value = config.uploadSelector || "input[type='file']";
-        elements.submitSelector.value = config.submitSelector || '';
-        elements.waitAfterUpload.value = config.waitAfterUpload || '2000';
-        elements.waitAfterSubmit.value = config.waitAfterSubmit || '3000';
-        elements.headless.checked = config.headless || false;
-        initialSteps = config.initialSteps || [];
-        perUploadSteps = config.perUploadSteps || [];
-        renderSteps('initial');
-        renderSteps('perUpload');
+        applyConfig(config);
       } catch (e) {
         console.error('Error loading config:', e);
       }
+    }
+  }
+
+  // Apply config to the UI
+  function applyConfig(config) {
+    elements.targetUrl.value = config.targetUrl || '';
+    elements.uploadSelector.value = config.uploadSelector || "input[type='file']";
+    elements.submitSelector.value = config.submitSelector || '';
+    elements.waitAfterUpload.value = config.waitAfterUpload || '2000';
+    elements.waitAfterSubmit.value = config.waitAfterSubmit || '3000';
+    elements.headless.checked = config.headless || false;
+    initialSteps = config.initialSteps || [];
+    perUploadSteps = config.perUploadSteps || [];
+    renderSteps('initial');
+    renderSteps('perUpload');
+    
+    // If a folder path is saved, try to load it
+    if (config.folderPath) {
+      selectedFolder = config.folderPath;
+      elements.folderPath.textContent = selectedFolder;
+      // Rescan the folder
+      window.electronAPI.scanFolder(selectedFolder).then(scanResult => {
+        if (scanResult.success) {
+          documents = scanResult.documents;
+          renderDocuments();
+          elements.documentsContainer.classList.remove('hidden');
+          updateStartButton();
+        }
+      });
+    }
+    
+    updateStartButton();
+  }
+
+  // Get current config object
+  function getCurrentConfig() {
+    return {
+      targetUrl: elements.targetUrl.value,
+      uploadSelector: elements.uploadSelector.value,
+      submitSelector: elements.submitSelector.value,
+      waitAfterUpload: elements.waitAfterUpload.value,
+      waitAfterSubmit: elements.waitAfterSubmit.value,
+      headless: elements.headless.checked,
+      initialSteps: initialSteps,
+      perUploadSteps: perUploadSteps,
+      folderPath: selectedFolder
+    };
+  }
+
+  // Save config to file
+  async function handleSaveConfig() {
+    const config = getCurrentConfig();
+    const result = await window.electronAPI.saveConfig(config);
+    
+    if (result.success) {
+      addLog(`Configuration saved to: ${result.filePath}`, 'success');
+    } else if (!result.canceled) {
+      addLog(`Failed to save configuration: ${result.error}`, 'error');
+    }
+  }
+
+  // Load config from file
+  async function handleLoadConfig() {
+    const result = await window.electronAPI.loadConfig();
+    
+    if (result.success) {
+      applyConfig(result.config);
+      addLog(`Configuration loaded from: ${result.filePath}`, 'success');
+    } else if (!result.canceled) {
+      addLog(`Failed to load configuration: ${result.error}`, 'error');
     }
   }
 
