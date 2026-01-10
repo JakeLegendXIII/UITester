@@ -133,7 +133,3 @@ UITester/
 - Verify selectors are correct using browser DevTools
 - Add wait steps between actions if the page loads slowly
 - Check the logs for error messages
-
-## License
-
-MIT
