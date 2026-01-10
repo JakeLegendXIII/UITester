@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';">
+  <title>UI Tester - Document Upload Automation</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <h1>📄 UI Tester</h1>
+      <p class="subtitle">Document Upload Automation Tool</p>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Configuration Panel -->
+      <section class="config-panel">
+        <h2>⚙️ Configuration</h2>
+        
+        <div class="form-group">
+          <label for="targetUrl">Target URL</label>
+          <input type="url" id="targetUrl" placeholder="https://example.com/upload" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="uploadSelector">Upload Input Selector</label>
+            <input type="text" id="uploadSelector" value="input[type='file']" />
+          </div>
+          <div class="form-group">
+            <label for="submitSelector">Submit Button Selector (optional)</label>
+            <input type="text" id="submitSelector" placeholder="button[type='submit']" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="waitAfterUpload">Wait After Upload (ms)</label>
+            <input type="number" id="waitAfterUpload" value="2000" min="0" />
+          </div>
+          <div class="form-group">
+            <label for="waitAfterSubmit">Wait After Submit (ms)</label>
+            <input type="number" id="waitAfterSubmit" value="3000" min="0" />
+          </div>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" id="headless" />
+            Run in headless mode (browser not visible)
+          </label>
+        </div>
+      </section>
+
+      <!-- Custom Steps Panel -->
+      <section class="steps-panel">
+        <h2>🔧 Pre-Upload Steps (Optional)</h2>
+        <p class="help-text">Add custom steps to perform before uploading (e.g., login, navigation)</p>
+        
+        <div id="customSteps" class="steps-list"></div>
+        
+        <button type="button" id="addStepBtn" class="btn btn-secondary">+ Add Step</button>
+      </section>
+
+      <!-- Folder Selection -->
+      <section class="folder-panel">
+        <h2>📁 Document Folder</h2>
+        
+        <div class="folder-select">
+          <button type="button" id="selectFolderBtn" class="btn btn-primary">
+            Select Folder
+          </button>
+          <span id="folderPath" class="folder-path">No folder selected</span>
+        </div>
+
+        <div id="documentsContainer" class="documents-container hidden">
+          <div class="documents-header">
+            <h3>Found Documents (<span id="docCount">0</span>)</h3>
+            <div class="filter-controls">
+              <label><input type="checkbox" id="filterJson" checked /> JSON</label>
+              <label><input type="checkbox" id="filterCsv" checked /> CSV</label>
+            </div>
+          </div>
+          <div id="documentsList" class="documents-list"></div>
+        </div>
+      </section>
+
+      <!-- Control Panel -->
+      <section class="control-panel">
+        <div class="progress-container hidden" id="progressContainer">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-text">
+            <span id="progressText">0%</span>
+            <span id="currentFile"></span>
+          </div>
+        </div>
+
+        <div class="control-buttons">
+          <button type="button" id="startBtn" class="btn btn-success" disabled>
+            ▶ Start Automation
+          </button>
+          <button type="button" id="stopBtn" class="btn btn-danger hidden">
+            ⏹ Stop
+          </button>
+        </div>
+      </section>
+
+      <!-- Logs Panel -->
+      <section class="logs-panel">
+        <div class="logs-header">
+          <h2>📋 Logs</h2>
+          <button type="button" id="clearLogsBtn" class="btn btn-small">Clear</button>
+        </div>
+        <div id="logsContainer" class="logs-container"></div>
+      </section>
+    </main>
+
+    <!-- File Preview Modal -->
+    <div id="previewModal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="previewTitle">File Preview</h3>
+          <button type="button" class="modal-close" id="closePreviewBtn">&times;</button>
+        </div>
+        <pre id="previewContent" class="preview-content"></pre>
+      </div>
+    </div>
+
+    <!-- Step Template Modal -->
+    <div id="stepModal" class="modal hidden">
+      <div class="modal-content modal-small">
+        <div class="modal-header">
+          <h3>Add Custom Step</h3>
+          <button type="button" class="modal-close" id="closeStepBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="stepAction">Action</label>
+            <select id="stepAction">
+              <option value="click">Click</option>
+              <option value="fill">Fill Input</option>
+              <option value="type">Type Text</option>
+              <option value="wait">Wait</option>
+              <option value="waitForSelector">Wait for Element</option>
+              <option value="press">Press Key</option>
+              <option value="navigate">Navigate to URL</option>
+            </select>
+          </div>
+          <div class="form-group" id="stepSelectorGroup">
+            <label for="stepSelector">Selector</label>
+            <input type="text" id="stepSelector" placeholder="#login-button" />
+          </div>
+          <div class="form-group hidden" id="stepValueGroup">
+            <label for="stepValue">Value</label>
+            <input type="text" id="stepValue" placeholder="Enter value" />
+          </div>
+          <div class="form-group hidden" id="stepDurationGroup">
+            <label for="stepDuration">Duration (ms)</label>
+            <input type="number" id="stepDuration" value="1000" min="0" />
+          </div>
+          <div class="form-group hidden" id="stepUrlGroup">
+            <label for="stepUrl">URL</label>
+            <input type="url" id="stepUrl" placeholder="https://example.com" />
+          </div>
+          <div class="form-group hidden" id="stepKeyGroup">
+            <label for="stepKey">Key</label>
+            <input type="text" id="stepKey" placeholder="Enter" />
+          </div>
+          <div class="form-group">
+            <label for="stepDescription">Description (optional)</label>
+            <input type="text" id="stepDescription" placeholder="Login to the application" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="saveStepBtn" class="btn btn-primary">Add Step</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
