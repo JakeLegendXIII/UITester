@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
     stepKeyGroup: document.getElementById('stepKeyGroup'),
     stepDescription: document.getElementById('stepDescription'),
     stepModalTitle: document.getElementById('stepModalTitle'),
+    stepValidationError: document.getElementById('stepValidationError'),
     saveStepBtn: document.getElementById('saveStepBtn'),
     
     // Control
@@ -88,6 +89,12 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.closeStepBtn.addEventListener('click', () => hideModal(elements.stepModal));
     elements.stepAction.addEventListener('change', updateStepModalFields);
     elements.saveStepBtn.addEventListener('click', saveStep);
+    
+    // Clear validation error when user types in step modal inputs
+    elements.stepSelector.addEventListener('input', hideStepValidationError);
+    elements.stepValue.addEventListener('input', hideStepValidationError);
+    elements.stepUrl.addEventListener('input', hideStepValidationError);
+    elements.stepKey.addEventListener('input', hideStepValidationError);
     
     // Control
     elements.startBtn.addEventListener('click', startAutomation);
@@ -267,6 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     updateStepModalFields();
+    hideStepValidationError(); // Clear any previous validation errors
     elements.stepModal.classList.remove('hidden');
   }
 
@@ -316,7 +324,8 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'waitForSelector':
         step.selector = elements.stepSelector.value;
         if (!step.selector) {
-          alert('Please enter a selector');
+          showStepValidationError('Please enter a selector');
+          elements.stepSelector.focus();
           return;
         }
         break;
@@ -325,7 +334,8 @@ document.addEventListener('DOMContentLoaded', () => {
         step.selector = elements.stepSelector.value;
         step.value = elements.stepValue.value;
         if (!step.selector) {
-          alert('Please enter a selector');
+          showStepValidationError('Please enter a selector');
+          elements.stepSelector.focus();
           return;
         }
         break;
@@ -335,14 +345,16 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'navigate':
         step.url = elements.stepUrl.value;
         if (!step.url) {
-          alert('Please enter a URL');
+          showStepValidationError('Please enter a URL');
+          elements.stepUrl.focus();
           return;
         }
         break;
       case 'press':
         step.key = elements.stepKey.value;
         if (!step.key) {
-          alert('Please enter a key');
+          showStepValidationError('Please enter a key');
+          elements.stepKey.focus();
           return;
         }
         break;
@@ -399,6 +411,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     container.innerHTML = steps.map((step, index) => `
       <div class="step-item" data-index="${index}" data-type="${stepType}">
+        <div class="step-reorder-buttons">
+          <button class="step-move-up" data-index="${index}" data-type="${stepType}" ${index === 0 ? 'disabled' : ''}>▲</button>
+          <button class="step-move-down" data-index="${index}" data-type="${stepType}" ${index === steps.length - 1 ? 'disabled' : ''}>▼</button>
+        </div>
         <span class="step-number">${index + 1}</span>
         <div class="step-details step-clickable" data-index="${index}" data-type="${stepType}">
           <span class="step-action">${step.action}</span>
@@ -415,6 +431,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const index = parseInt(e.currentTarget.dataset.index);
         const type = e.currentTarget.dataset.type;
         showStepModal(type, index);
+      });
+    });
+    
+    // Add move up button listeners
+    container.querySelectorAll('.step-move-up').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const index = parseInt(e.target.dataset.index);
+        const type = e.target.dataset.type;
+        moveStep(type, index, -1);
+      });
+    });
+    
+    // Add move down button listeners
+    container.querySelectorAll('.step-move-down').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const index = parseInt(e.target.dataset.index);
+        const type = e.target.dataset.type;
+        moveStep(type, index, 1);
       });
     });
     
@@ -435,9 +471,42 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Move step up or down
+  function moveStep(stepType, index, direction) {
+    const steps = stepType === 'initial' ? initialSteps : perUploadSteps;
+    const newIndex = index + direction;
+    
+    if (newIndex < 0 || newIndex >= steps.length) return;
+    
+    // Swap the steps
+    const temp = steps[index];
+    steps[index] = steps[newIndex];
+    steps[newIndex] = temp;
+    
+    renderSteps(stepType);
+  }
+
+  // Show validation error in step modal
+  function showStepValidationError(message) {
+    if (elements.stepValidationError) {
+      elements.stepValidationError.textContent = message;
+      elements.stepValidationError.classList.remove('hidden');
+    }
+  }
+
+  // Hide validation error in step modal
+  function hideStepValidationError() {
+    if (elements.stepValidationError) {
+      elements.stepValidationError.textContent = '';
+      elements.stepValidationError.classList.add('hidden');
+    }
+  }
+
   // Hide Modal
   function hideModal(modal) {
     modal.classList.add('hidden');
+    // Clear any validation errors when closing
+    hideStepValidationError();
   }
 
   // Update Start Button State
