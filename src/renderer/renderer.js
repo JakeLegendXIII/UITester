@@ -3,7 +3,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // State
   let selectedFolder = null;
   let documents = [];
-  let customSteps = [];
+  let initialSteps = [];      // Run once at the start
+  let perUploadSteps = [];    // Run before each file upload
+  let currentStepType = null; // Track which step type we're adding
   let isRunning = false;
 
   // DOM Elements
@@ -26,8 +28,10 @@ document.addEventListener('DOMContentLoaded', () => {
     filterCsv: document.getElementById('filterCsv'),
     
     // Steps
-    customStepsContainer: document.getElementById('customSteps'),
-    addStepBtn: document.getElementById('addStepBtn'),
+    initialStepsContainer: document.getElementById('initialSteps'),
+    perUploadStepsContainer: document.getElementById('perUploadSteps'),
+    addInitialStepBtn: document.getElementById('addInitialStepBtn'),
+    addPerUploadStepBtn: document.getElementById('addPerUploadStepBtn'),
     
     // Step Modal
     stepModal: document.getElementById('stepModal'),
@@ -44,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     stepKey: document.getElementById('stepKey'),
     stepKeyGroup: document.getElementById('stepKeyGroup'),
     stepDescription: document.getElementById('stepDescription'),
+    stepModalTitle: document.getElementById('stepModalTitle'),
     saveStepBtn: document.getElementById('saveStepBtn'),
     
     // Control
@@ -74,8 +79,11 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.filterJson.addEventListener('change', renderDocuments);
     elements.filterCsv.addEventListener('change', renderDocuments);
     
-    // Steps
-    elements.addStepBtn.addEventListener('click', () => showStepModal());
+    // Steps - Initial
+    elements.addInitialStepBtn.addEventListener('click', () => showStepModal('initial'));
+    // Steps - Per Upload
+    elements.addPerUploadStepBtn.addEventListener('click', () => showStepModal('perUpload'));
+    
     elements.closeStepBtn.addEventListener('click', () => hideModal(elements.stepModal));
     elements.stepAction.addEventListener('change', updateStepModalFields);
     elements.saveStepBtn.addEventListener('click', saveStep);
@@ -214,7 +222,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Custom Steps
-  function showStepModal() {
+  function showStepModal(stepType) {
+    currentStepType = stepType;
+    // Update modal title based on step type
+    if (elements.stepModalTitle) {
+      elements.stepModalTitle.textContent = stepType === 'initial' 
+        ? 'Add Initial Step (Run Once)' 
+        : 'Add Per-Upload Step (Run for Each File)';
+    }
     // Reset form
     elements.stepAction.value = 'click';
     elements.stepSelector.value = '';
@@ -305,8 +320,14 @@ document.addEventListener('DOMContentLoaded', () => {
         break;
     }
     
-    customSteps.push(step);
-    renderCustomSteps();
+    // Add to the appropriate step list based on type
+    if (currentStepType === 'initial') {
+      initialSteps.push(step);
+      renderSteps('initial');
+    } else {
+      perUploadSteps.push(step);
+      renderSteps('perUpload');
+    }
     hideModal(elements.stepModal);
   }
 
@@ -323,29 +344,40 @@ document.addEventListener('DOMContentLoaded', () => {
     return descriptions[action] || action;
   }
 
-  function renderCustomSteps() {
-    if (customSteps.length === 0) {
-      elements.customStepsContainer.innerHTML = '';
+  function renderSteps(stepType) {
+    const steps = stepType === 'initial' ? initialSteps : perUploadSteps;
+    const container = stepType === 'initial' 
+      ? elements.initialStepsContainer 
+      : elements.perUploadStepsContainer;
+    
+    if (steps.length === 0) {
+      container.innerHTML = '';
       return;
     }
     
-    elements.customStepsContainer.innerHTML = customSteps.map((step, index) => `
+    container.innerHTML = steps.map((step, index) => `
       <div class="step-item">
         <span class="step-number">${index + 1}</span>
         <div class="step-details">
           <span class="step-action">${step.action}</span>
           <span class="step-description">${step.description}</span>
         </div>
-        <button class="step-remove" data-index="${index}">&times;</button>
+        <button class="step-remove" data-index="${index}" data-type="${stepType}">&times;</button>
       </div>
     `).join('');
     
     // Add remove button listeners
-    elements.customStepsContainer.querySelectorAll('.step-remove').forEach(btn => {
+    container.querySelectorAll('.step-remove').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const index = parseInt(e.target.dataset.index);
-        customSteps.splice(index, 1);
-        renderCustomSteps();
+        const type = e.target.dataset.type;
+        if (type === 'initial') {
+          initialSteps.splice(index, 1);
+          renderSteps('initial');
+        } else {
+          perUploadSteps.splice(index, 1);
+          renderSteps('perUpload');
+        }
       });
     });
   }
@@ -388,7 +420,8 @@ document.addEventListener('DOMContentLoaded', () => {
       waitAfterSubmit: parseInt(elements.waitAfterSubmit.value) || 3000,
       headless: elements.headless.checked,
       documents: getSelectedDocuments(),
-      customSteps: customSteps
+      initialSteps: initialSteps,
+      perUploadSteps: perUploadSteps
     };
     
     addLog('Starting automation...', 'info');
@@ -458,7 +491,8 @@ document.addEventListener('DOMContentLoaded', () => {
       waitAfterUpload: elements.waitAfterUpload.value,
       waitAfterSubmit: elements.waitAfterSubmit.value,
       headless: elements.headless.checked,
-      customSteps: customSteps
+      initialSteps: initialSteps,
+      perUploadSteps: perUploadSteps
     };
     localStorage.setItem('uiTesterConfig', JSON.stringify(config));
   }
@@ -474,8 +508,10 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.waitAfterUpload.value = config.waitAfterUpload || '2000';
         elements.waitAfterSubmit.value = config.waitAfterSubmit || '3000';
         elements.headless.checked = config.headless || false;
-        customSteps = config.customSteps || [];
-        renderCustomSteps();
+        initialSteps = config.initialSteps || [];
+        perUploadSteps = config.perUploadSteps || [];
+        renderSteps('initial');
+        renderSteps('perUpload');
       } catch (e) {
         console.error('Error loading config:', e);
       }

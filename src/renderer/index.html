@@ -56,14 +56,24 @@
         </div>
       </section>
 
-      <!-- Custom Steps Panel -->
+      <!-- Initial Steps Panel (Run Once) -->
       <section class="steps-panel">
-        <h2>🔧 Pre-Upload Steps (Optional)</h2>
-        <p class="help-text">Add custom steps to perform before uploading (e.g., login, navigation)</p>
+        <h2>🔐 Initial Steps (Run Once)</h2>
+        <p class="help-text">Steps that run once at the start (e.g., login, accept cookies)</p>
         
-        <div id="customSteps" class="steps-list"></div>
+        <div id="initialSteps" class="steps-list"></div>
         
-        <button type="button" id="addStepBtn" class="btn btn-secondary">+ Add Step</button>
+        <button type="button" id="addInitialStepBtn" class="btn btn-secondary">+ Add Initial Step</button>
+      </section>
+
+      <!-- Per-Upload Steps Panel -->
+      <section class="steps-panel">
+        <h2>🔄 Per-Upload Steps (Run for Each File)</h2>
+        <p class="help-text">Steps that run before each file upload (e.g., open menu, click import)</p>
+        
+        <div id="perUploadSteps" class="steps-list"></div>
+        
+        <button type="button" id="addPerUploadStepBtn" class="btn btn-secondary">+ Add Per-Upload Step</button>
       </section>
 
       <!-- Folder Selection -->
@@ -136,7 +146,7 @@
     <div id="stepModal" class="modal hidden">
       <div class="modal-content modal-small">
         <div class="modal-header">
-          <h3>Add Custom Step</h3>
+          <h3 id="stepModalTitle">Add Custom Step</h3>
           <button type="button" class="modal-close" id="closeStepBtn">&times;</button>
         </div>
         <div class="modal-body">

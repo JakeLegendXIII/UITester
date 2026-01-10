@@ -1,0 +1,25 @@
+{
+  "name": "ui-tester",
+  "version": "1.0.0",
+  "description": "UI Testing application for batch document uploads using browser automation",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "install-browsers": "npx playwright install chromium"
+  },
+  "keywords": [
+    "ui-testing",
+    "automation",
+    "playwright",
+    "electron",
+    "document-upload"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0"
+  }
+}

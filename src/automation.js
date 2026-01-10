@@ -12,7 +12,8 @@ class AutomationEngine {
       waitAfterSubmit: config.waitAfterSubmit || 3000,
       headless: config.headless !== undefined ? config.headless : false,
       documents: config.documents || [],
-      customSteps: config.customSteps || [],
+      initialSteps: config.initialSteps || [],      // Run once at start
+      perUploadSteps: config.perUploadSteps || [],  // Run before each upload
       ...config
     };
     
@@ -88,6 +89,12 @@ class AutomationEngine {
       await this.page.goto(this.config.targetUrl, { waitUntil: 'networkidle' });
       this.log('Page loaded successfully');
       
+      // Execute initial steps ONCE at the start (e.g., login, accept cookies)
+      if (this.config.initialSteps.length > 0) {
+        this.log('Running initial steps (login, setup, etc.)...');
+        await this.executeCustomSteps(this.config.initialSteps);
+      }
+      
       const documents = this.config.documents;
       const total = documents.length;
       
@@ -101,10 +108,10 @@ class AutomationEngine {
         this.emitProgress(i + 1, total, 'uploading', doc.name);
         
         try {
-          // Execute custom pre-upload steps before EACH document (e.g., open menu, click import)
-          if (this.config.customSteps.length > 0) {
-            this.log(`Running pre-upload steps for: ${doc.name}`);
-            await this.executeCustomSteps(this.config.customSteps);
+          // Execute per-upload steps before EACH document (e.g., open menu, click import)
+          if (this.config.perUploadSteps.length > 0) {
+            this.log(`Running per-upload steps for: ${doc.name}`);
+            await this.executeCustomSteps(this.config.perUploadSteps);
           }
           
           await this.uploadDocument(doc);
