@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     waitAfterUpload: document.getElementById('waitAfterUpload'),
     waitAfterSubmit: document.getElementById('waitAfterSubmit'),
     headless: document.getElementById('headless'),
+    uiAutomationOnly: document.getElementById('uiAutomationOnly'),
     
     // Folder
     selectFolderBtn: document.getElementById('selectFolderBtn'),
@@ -28,6 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
     docCount: document.getElementById('docCount'),
     filterJson: document.getElementById('filterJson'),
     filterCsv: document.getElementById('filterCsv'),
+    folderPanel: document.getElementById('folderPanel'),
+    perUploadPanel: document.getElementById('perUploadPanel'),
     
     // Steps
     initialStepsContainer: document.getElementById('initialSteps'),
@@ -83,6 +86,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Folder selection
     elements.selectFolderBtn.addEventListener('click', handleFolderSelect);
     
+    // UI Automation Only toggle
+    elements.uiAutomationOnly.addEventListener('change', handleUiAutomationOnlyToggle);
+    
     // Filters
     elements.filterJson.addEventListener('change', renderDocuments);
     elements.filterCsv.addEventListener('change', renderDocuments);
@@ -130,6 +136,27 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Load saved config if any
     loadConfig();
+  }
+
+  // UI Automation Only Toggle Handler
+  function handleUiAutomationOnlyToggle() {
+    updateUiAutomationOnlyUI();
+    updateStartButton();
+  }
+
+  // Update UI based on UI Automation Only setting
+  function updateUiAutomationOnlyUI() {
+    const isUiAutomationOnly = elements.uiAutomationOnly.checked;
+    
+    // Hide/show folder panel
+    if (elements.folderPanel) {
+      elements.folderPanel.style.display = isUiAutomationOnly ? 'none' : 'block';
+    }
+    
+    // Hide/show per-upload steps panel (not needed when no uploads)
+    if (elements.perUploadPanel) {
+      elements.perUploadPanel.style.display = isUiAutomationOnly ? 'none' : 'block';
+    }
   }
 
   // Folder Selection
@@ -523,7 +550,14 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateStartButton() {
     const hasUrl = elements.targetUrl.value.trim() !== '';
     const hasDocuments = getSelectedDocuments().length > 0;
-    elements.startBtn.disabled = !hasUrl || !hasDocuments || isRunning;
+    const uiAutomationOnly = elements.uiAutomationOnly.checked;
+    
+    // When UI automation only, just need URL; otherwise need URL and documents
+    if (uiAutomationOnly) {
+      elements.startBtn.disabled = !hasUrl || isRunning;
+    } else {
+      elements.startBtn.disabled = !hasUrl || !hasDocuments || isRunning;
+    }
   }
 
   // Get Selected Documents
@@ -551,7 +585,8 @@ document.addEventListener('DOMContentLoaded', () => {
       waitAfterUpload: parseInt(elements.waitAfterUpload.value) || 2000,
       waitAfterSubmit: parseInt(elements.waitAfterSubmit.value) || 3000,
       headless: elements.headless.checked,
-      documents: getSelectedDocuments(),
+      uiAutomationOnly: elements.uiAutomationOnly.checked,
+      documents: elements.uiAutomationOnly.checked ? [] : getSelectedDocuments(),
       initialSteps: initialSteps,
       perUploadSteps: perUploadSteps
     };
@@ -623,6 +658,7 @@ document.addEventListener('DOMContentLoaded', () => {
       waitAfterUpload: elements.waitAfterUpload.value,
       waitAfterSubmit: elements.waitAfterSubmit.value,
       headless: elements.headless.checked,
+      uiAutomationOnly: elements.uiAutomationOnly.checked,
       initialSteps: initialSteps,
       perUploadSteps: perUploadSteps
     };
@@ -649,10 +685,12 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.waitAfterUpload.value = config.waitAfterUpload || '2000';
     elements.waitAfterSubmit.value = config.waitAfterSubmit || '3000';
     elements.headless.checked = config.headless || false;
+    elements.uiAutomationOnly.checked = config.uiAutomationOnly || false;
     initialSteps = config.initialSteps || [];
     perUploadSteps = config.perUploadSteps || [];
     renderSteps('initial');
     renderSteps('perUpload');
+    updateUiAutomationOnlyUI();
     
     // If a folder path is saved, try to load it
     if (config.folderPath) {
@@ -681,6 +719,7 @@ document.addEventListener('DOMContentLoaded', () => {
       waitAfterUpload: elements.waitAfterUpload.value,
       waitAfterSubmit: elements.waitAfterSubmit.value,
       headless: elements.headless.checked,
+      uiAutomationOnly: elements.uiAutomationOnly.checked,
       initialSteps: initialSteps,
       perUploadSteps: perUploadSteps,
       folderPath: selectedFolder

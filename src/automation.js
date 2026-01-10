@@ -95,36 +95,42 @@ class AutomationEngine {
         await this.executeCustomSteps(this.config.initialSteps);
       }
       
-      const documents = this.config.documents;
-      const total = documents.length;
-      
-      for (let i = 0; i < documents.length; i++) {
-        if (!this.isRunning) {
-          this.log('Automation stopped by user', 'warning');
-          break;
-        }
+      // Check if UI Automation Only mode
+      if (this.config.uiAutomationOnly) {
+        this.log('UI Automation Only mode - skipping file uploads', 'info');
+        this.emitProgress(1, 1, 'completed');
+      } else {
+        const documents = this.config.documents;
+        const total = documents.length;
         
-        const doc = documents[i];
-        this.emitProgress(i + 1, total, 'uploading', doc.name);
-        
-        try {
-          // Execute per-upload steps before EACH document (e.g., open menu, click import)
-          if (this.config.perUploadSteps.length > 0) {
-            this.log(`Running per-upload steps for: ${doc.name}`);
-            await this.executeCustomSteps(this.config.perUploadSteps);
+        for (let i = 0; i < documents.length; i++) {
+          if (!this.isRunning) {
+            this.log('Automation stopped by user', 'warning');
+            break;
           }
           
-          await this.uploadDocument(doc);
-          results.successful.push(doc);
-          this.log(`✓ Successfully uploaded: ${doc.name}`, 'success');
-        } catch (error) {
-          results.failed.push({ document: doc, error: error.message });
-          this.log(`✗ Failed to upload ${doc.name}: ${error.message}`, 'error');
-        }
-        
-        // Wait between uploads
-        if (i < documents.length - 1) {
-          await this.page.waitForTimeout(this.config.waitAfterUpload);
+          const doc = documents[i];
+          this.emitProgress(i + 1, total, 'uploading', doc.name);
+          
+          try {
+            // Execute per-upload steps before EACH document (e.g., open menu, click import)
+            if (this.config.perUploadSteps.length > 0) {
+              this.log(`Running per-upload steps for: ${doc.name}`);
+              await this.executeCustomSteps(this.config.perUploadSteps);
+            }
+            
+            await this.uploadDocument(doc);
+            results.successful.push(doc);
+            this.log(`✓ Successfully uploaded: ${doc.name}`, 'success');
+          } catch (error) {
+            results.failed.push({ document: doc, error: error.message });
+            this.log(`✗ Failed to upload ${doc.name}: ${error.message}`, 'error');
+          }
+          
+          // Wait between uploads
+          if (i < documents.length - 1) {
+            await this.page.waitForTimeout(this.config.waitAfterUpload);
+          }
         }
       }
       
@@ -141,7 +147,13 @@ class AutomationEngine {
       
       this.isRunning = false;
       this.log('Automation completed');
-      this.emitProgress(results.successful.length, this.config.documents.length, 'completed');
+      
+      // Handle progress for UI automation only vs file upload mode
+      if (this.config.uiAutomationOnly) {
+        this.emitProgress(1, 1, 'completed');
+      } else {
+        this.emitProgress(results.successful.length, this.config.documents.length, 'completed');
+      }
     }
     
     return results;

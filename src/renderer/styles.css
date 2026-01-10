@@ -369,6 +369,13 @@ input[type="checkbox"] {
   margin-bottom: 15px;
 }
 
+/* Inline help text for checkboxes */
+.help-text-inline {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0.25rem 0 0 1.5rem;
+}
+
 .steps-list {
   margin-bottom: 15px;
 }

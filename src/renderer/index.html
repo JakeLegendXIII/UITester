@@ -61,6 +61,14 @@
             Run in headless mode (browser not visible)
           </label>
         </div>
+
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" id="uiAutomationOnly" />
+            UI Automation Only (no file uploads)
+          </label>
+          <p class="help-text-inline">Run only the automation steps without uploading any documents</p>
+        </div>
       </section>
 
       <!-- Initial Steps Panel (Run Once) -->
@@ -74,7 +82,7 @@
       </section>
 
       <!-- Per-Upload Steps Panel -->
-      <section class="steps-panel">
+      <section id="perUploadPanel" class="steps-panel">
         <h2>🔄 Per-Upload Steps (Run for Each File)</h2>
         <p class="help-text">Steps that run before each file upload (e.g., open menu, click import)</p>
         
@@ -84,7 +92,7 @@
       </section>
 
       <!-- Folder Selection -->
-      <section class="folder-panel">
+      <section id="folderPanel" class="folder-panel">
         <h2>📁 Document Folder</h2>
         
         <div class="folder-select">
