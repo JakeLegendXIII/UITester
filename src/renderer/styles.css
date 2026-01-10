@@ -56,7 +56,25 @@ body {
 
 .header-actions {
   display: flex;
+  align-items: center;
   gap: 10px;
+}
+
+.current-config-name {
+  font-size: 0.85rem;
+  color: var(--accent-secondary);
+  background: rgba(15, 155, 142, 0.15);
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--accent-secondary);
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.current-config-name:empty {
+  display: none;
 }
 
 .app-header h1 {

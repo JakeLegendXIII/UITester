@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentStepType = null; // Track which step type we're adding/editing
   let editingStepIndex = null; // Track which step is being edited (null = adding new)
   let isRunning = false;
+  let currentConfigFile = null; // Track the currently loaded config file
 
   // DOM Elements
   const elements = {
@@ -73,7 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Save/Load Config
     saveConfigBtn: document.getElementById('saveConfigBtn'),
-    loadConfigBtn: document.getElementById('loadConfigBtn')
+    loadConfigBtn: document.getElementById('loadConfigBtn'),
+    currentConfigName: document.getElementById('currentConfigName')
   };
 
   // Initialize event listeners
@@ -685,12 +687,26 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
+  // Update the displayed config file name
+  function updateConfigFileDisplay(filePath) {
+    currentConfigFile = filePath;
+    if (filePath && elements.currentConfigName) {
+      // Extract just the filename from the full path
+      const fileName = filePath.split(/[/\\]/).pop();
+      elements.currentConfigName.textContent = `📄 ${fileName}`;
+      elements.currentConfigName.title = filePath; // Show full path on hover
+    } else if (elements.currentConfigName) {
+      elements.currentConfigName.textContent = '';
+    }
+  }
+
   // Save config to file
   async function handleSaveConfig() {
     const config = getCurrentConfig();
     const result = await window.electronAPI.saveConfig(config);
     
     if (result.success) {
+      updateConfigFileDisplay(result.filePath);
       addLog(`Configuration saved to: ${result.filePath}`, 'success');
     } else if (!result.canceled) {
       addLog(`Failed to save configuration: ${result.error}`, 'error');
@@ -703,6 +719,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (result.success) {
       applyConfig(result.config);
+      updateConfigFileDisplay(result.filePath);
       addLog(`Configuration loaded from: ${result.filePath}`, 'success');
     } else if (!result.canceled) {
       addLog(`Failed to load configuration: ${result.error}`, 'error');
