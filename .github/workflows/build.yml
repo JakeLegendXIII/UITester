@@ -2,13 +2,13 @@ name: Build and Release
 
 on:
   push:
-    branches:
-      - main
+    #branches:
+    #  - main
     tags:
       - 'v*'
-  pull_request:
-    branches:
-      - main
+  #pull_request:
+  #  branches:
+  #    - main
 
 jobs:
   build:
@@ -21,7 +21,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
