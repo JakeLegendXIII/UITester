@@ -15,6 +15,37 @@
   --radius: 8px;
 }
 
+/* Input with toggle visibility button */
+.input-with-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-with-toggle input {
+  flex: 1;
+}
+
+.btn-toggle-visibility {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--text-primary);
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.btn-toggle-visibility:hover {
+  background: var(--bg-secondary);
+  border-color: var(--accent-secondary);
+}
+
+.btn-toggle-visibility.hidden-value {
+  opacity: 0.6;
+}
+
 /* Reset and Base */
 * {
   margin: 0;

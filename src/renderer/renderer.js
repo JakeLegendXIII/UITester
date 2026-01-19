@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     stepValue: document.getElementById('stepValue'),
     stepValueGroup: document.getElementById('stepValueGroup'),
     stepIsSecret: document.getElementById('stepIsSecret'),
+    toggleValueVisibility: document.getElementById('toggleValueVisibility'),
     stepDuration: document.getElementById('stepDuration'),
     stepDurationGroup: document.getElementById('stepDurationGroup'),
     stepUrl: document.getElementById('stepUrl'),
@@ -108,6 +109,10 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.stepValue.addEventListener('input', hideStepValidationError);
     elements.stepUrl.addEventListener('input', hideStepValidationError);
     elements.stepKey.addEventListener('input', hideStepValidationError);
+    
+    // Secret field behavior - toggle input type and visibility
+    elements.stepIsSecret.addEventListener('change', handleSecretCheckboxChange);
+    elements.toggleValueVisibility.addEventListener('click', toggleValueVisibility);
     
     // Control
     elements.startBtn.addEventListener('click', startAutomation);
@@ -314,6 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     updateStepModalFields();
+    handleSecretCheckboxChange(); // Initialize value input type based on secret checkbox
     hideStepValidationError(); // Clear any previous validation errors
     elements.stepModal.classList.remove('hidden');
   }
@@ -348,6 +354,29 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'press':
         elements.stepKeyGroup.classList.remove('hidden');
         break;
+    }
+  }
+
+  // Handle secret checkbox change - toggle input type
+  function handleSecretCheckboxChange() {
+    const isSecret = elements.stepIsSecret.checked;
+    if (isSecret) {
+      elements.stepValue.type = 'password';
+      elements.toggleValueVisibility.classList.add('hidden-value');
+    } else {
+      elements.stepValue.type = 'text';
+      elements.toggleValueVisibility.classList.remove('hidden-value');
+    }
+  }
+
+  // Toggle visibility of the value field
+  function toggleValueVisibility() {
+    if (elements.stepValue.type === 'password') {
+      elements.stepValue.type = 'text';
+      elements.toggleValueVisibility.classList.remove('hidden-value');
+    } else {
+      elements.stepValue.type = 'password';
+      elements.toggleValueVisibility.classList.add('hidden-value');
     }
   }
 
