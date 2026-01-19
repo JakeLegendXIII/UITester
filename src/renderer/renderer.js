@@ -46,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
     stepSelectorGroup: document.getElementById('stepSelectorGroup'),
     stepValue: document.getElementById('stepValue'),
     stepValueGroup: document.getElementById('stepValueGroup'),
+    stepIsSecret: document.getElementById('stepIsSecret'),
     stepDuration: document.getElementById('stepDuration'),
     stepDurationGroup: document.getElementById('stepDurationGroup'),
     stepUrl: document.getElementById('stepUrl'),
@@ -296,6 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
       elements.stepAction.value = stepToEdit.action || 'click';
       elements.stepSelector.value = stepToEdit.selector || '';
       elements.stepValue.value = stepToEdit.value || '';
+      elements.stepIsSecret.checked = stepToEdit.isSecret || false;
       elements.stepDuration.value = stepToEdit.duration || '1000';
       elements.stepUrl.value = stepToEdit.url || '';
       elements.stepKey.value = stepToEdit.key || '';
@@ -304,6 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
       elements.stepAction.value = 'click';
       elements.stepSelector.value = '';
       elements.stepValue.value = '';
+      elements.stepIsSecret.checked = false;
       elements.stepDuration.value = '1000';
       elements.stepUrl.value = '';
       elements.stepKey.value = '';
@@ -370,6 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'type':
         step.selector = elements.stepSelector.value;
         step.value = elements.stepValue.value;
+        step.isSecret = elements.stepIsSecret.checked;
         if (!step.selector) {
           showStepValidationError('Please enter a selector');
           elements.stepSelector.focus();
@@ -456,6 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="step-details step-clickable" data-index="${index}" data-type="${stepType}">
           <span class="step-action">${step.action}</span>
           <span class="step-description">${step.description}</span>
+          ${step.isSecret ? '<span class="step-secret-badge">🔒 Secret</span>' : ''}
           <span class="step-edit-hint">✎ click to edit</span>
         </div>
         <button class="step-remove" data-index="${index}" data-type="${stepType}">&times;</button>
@@ -710,9 +715,21 @@ document.addEventListener('DOMContentLoaded', () => {
     updateStartButton();
   }
 
-  // Get current config object
-  function getCurrentConfig() {
-    return {
+  // Filter out secret values from steps for saving to file
+  function filterSecretValues(steps) {
+    return steps.map(step => {
+      if (step.isSecret) {
+        // Create a copy without the value
+        const { value, ...stepWithoutValue } = step;
+        return stepWithoutValue;
+      }
+      return step;
+    });
+  }
+
+  // Get current config object (with secrets filtered out for file saving)
+  function getCurrentConfig(filterSecrets = true) {
+    const config = {
       targetUrl: elements.targetUrl.value,
       uploadSelector: elements.uploadSelector.value,
       submitSelector: elements.submitSelector.value,
@@ -720,10 +737,11 @@ document.addEventListener('DOMContentLoaded', () => {
       waitAfterSubmit: elements.waitAfterSubmit.value,
       headless: elements.headless.checked,
       uiAutomationOnly: elements.uiAutomationOnly.checked,
-      initialSteps: initialSteps,
-      perUploadSteps: perUploadSteps,
+      initialSteps: filterSecrets ? filterSecretValues(initialSteps) : initialSteps,
+      perUploadSteps: filterSecrets ? filterSecretValues(perUploadSteps) : perUploadSteps,
       folderPath: selectedFolder
     };
+    return config;
   }
 
   // Update the displayed config file name

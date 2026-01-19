@@ -437,6 +437,35 @@ input[type="checkbox"] {
   opacity: 1;
 }
 
+.step-secret-badge {
+  font-size: 0.75rem;
+  color: var(--warning);
+  background: rgba(255, 171, 0, 0.15);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--warning);
+  margin-left: 8px;
+}
+
+.checkbox-inline {
+  margin-top: 8px;
+}
+
+.checkbox-inline label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.checkbox-inline input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
 .step-reorder-buttons {
   display: flex;
   flex-direction: column;
